@@ -2,10 +2,73 @@ from display import *
 from matrix import *
 from math import *
 from gmath import *
+import random
 
+min_float = float('-inf')
+zbuffer = [[min_float for x in range(500)] for x in range(500)]
+def clear_zbuffer():
+    global zbuffer
+    zbuffer = [[min_float for x in range(500)] for x in range(500)]
 
-def scanline_convert(polygons, i, screen, zbuffer):
-    pass
+def scanline_convert(matrix, point, screen, zbuffer):
+    p0 = matrix[point]
+    p1 = matrix[point+1]
+    p2 = matrix[point+2]
+
+    colortmp = random.sample(xrange(255),3)
+    
+    for i in range(3):
+        p0[i] = math.floor(p0[i])
+        p1[i] = math.floor(p1[i])
+        p2[i] = math.floor(p2[i])
+            
+    pts = sorted( (p0,p1,p2), key=lambda pt: pt[1])
+    top = pts[0]; mid = pts[1]; bot = pts[2]
+    
+    yi = top[1]
+    x0 = top[0]
+    x1 = top[0]
+    z0 = top[2]
+    z1 = top[2]
+    
+    if bot[1] == top[1]:
+        dx0 = 0
+        dz0 = 0
+    else:
+        dx0 = (bot[0]-top[0])/(bot[1]-top[1])
+        dz0 = (bot[2]-top[2])/(bot[1]-top[1])        
+    if mid[1] == top[1]:
+        dx1m = 0
+        dz1m = 0
+    else:
+        dx1m = (mid[0]-top[0])/(mid[1]-top[1])
+        dz1m = (mid[2]-top[2])/(mid[1]-top[1])
+
+    if bot[1] == mid[1]:
+        dx1b = 0
+        dz1b = 0
+    else:
+        dx1b = (bot[0]-mid[0])/(bot[1]-mid[1])
+        dz1b = (bot[2]-mid[2])/(bot[1]-mid[1])
+
+    while yi < mid[1]:
+        x1 += dx1m
+        z1 += dz1m
+        yi += 1
+        x0 += dx0
+        z0 += dz0
+        draw_line(screen, x0,yi,z0, x1,yi,z1, colortmp)
+    x1 = mid[0]
+    yi = mid[1]
+    z1 = mid[2]
+    draw_line(screen, x0,yi,z0, x1,yi,z1, colortmp)
+    while yi < bot[1]:
+        x0 += dx0
+        z0 += dz0
+        x1 += dx1b
+        z1 += dz1b
+        yi += 1
+        draw_line(screen, x0,yi,z0, x1,yi,z1, colortmp)
 
 
 def add_polygon( polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2 ):
@@ -24,7 +87,8 @@ def draw_polygons( matrix, screen, zbuffer, color ):
         normal = calculate_normal(matrix, point)[:]
         #print normal
         if normal[2] > 0:
-            #scanline_convert(matrix, point, screen, zbuffer)            
+            scanline_convert(matrix, point, screen, zbuffer)            
+            '''
             draw_line( int(matrix[point][0]),
                        int(matrix[point][1]),
                        matrix[point][2],
@@ -46,6 +110,7 @@ def draw_polygons( matrix, screen, zbuffer, color ):
                        int(matrix[point+2][1]),
                        matrix[point+2][2],
                        screen, zbuffer, color)    
+            '''
         point+= 3
 
 
@@ -255,7 +320,7 @@ def add_point( matrix, x, y, z=0 ):
 
 
 def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
-
+    global zbuffer
     #swap points if going right -> left
     if x0 > x1:
         xt = x0
