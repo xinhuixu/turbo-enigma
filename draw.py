@@ -3,6 +3,7 @@ from matrix import *
 from math import *
 from gmath import *
 import random
+import time
 
 min_float = float('-inf')
 zbuffer = [[min_float for x in range(500)] for x in range(500)]
@@ -15,14 +16,16 @@ def scanline_convert(matrix, point, screen, zbuffer):
     p1 = matrix[point+1]
     p2 = matrix[point+2]
 
+    print p0,p1,p2
     colortmp = random.sample(xrange(255),3)
-    
     for i in range(3):
         p0[i] = math.floor(p0[i])
         p1[i] = math.floor(p1[i])
         p2[i] = math.floor(p2[i])
-            
     pts = sorted( (p0,p1,p2), key=lambda pt: pt[1])
+    print pts
+    time.sleep(1)
+
     top = pts[0]; mid = pts[1]; bot = pts[2]
     
     yi = top[1]
@@ -30,7 +33,7 @@ def scanline_convert(matrix, point, screen, zbuffer):
     x1 = top[0]
     z0 = top[2]
     z1 = top[2]
-    
+
     if bot[1] == top[1]:
         dx0 = 0
         dz0 = 0
@@ -57,18 +60,18 @@ def scanline_convert(matrix, point, screen, zbuffer):
         yi += 1
         x0 += dx0
         z0 += dz0
-        draw_line(screen, x0,yi,z0, x1,yi,z1, colortmp)
+        draw_line(x0,yi,z0, x1,yi,z1, screen, zbuffer, colortmp)
     x1 = mid[0]
     yi = mid[1]
     z1 = mid[2]
-    draw_line(screen, x0,yi,z0, x1,yi,z1, colortmp)
+    draw_line(x0,yi,z0, x1,yi,z1, screen, zbuffer, colortmp)
     while yi < bot[1]:
         x0 += dx0
         z0 += dz0
         x1 += dx1b
         z1 += dz1b
         yi += 1
-        draw_line(screen, x0,yi,z0, x1,yi,z1, colortmp)
+        draw_line(x0,yi,z0, x1,yi,z1, screen,zbuffer, colortmp)
 
 
 def add_polygon( polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2 ):
@@ -320,7 +323,7 @@ def add_point( matrix, x, y, z=0 ):
 
 
 def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
-    global zbuffer
+
     #swap points if going right -> left
     if x0 > x1:
         xt = x0
