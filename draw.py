@@ -21,7 +21,8 @@ def scanline_convert(matrix, point, screen, zbuffer):
         p0[i] = floor(p0[i])
         p1[i] = floor(p1[i])
         p2[i] = floor(p2[i])
-    pts = sorted( (p0,p1,p2), key=lambda pt: pt[1])
+    pts = sorted( (p0,p1,p2), key=lambda pt:(pt[1],pt[0]))
+
     print pts
 
     top = pts[0]; mid = pts[1]; bot = pts[2]
@@ -58,18 +59,18 @@ def scanline_convert(matrix, point, screen, zbuffer):
         yi += 1
         x0 += dx0
         z0 += dz0
-        draw_line(x0,yi,z0, x1,yi,z1, screen, zbuffer, colortmp)
+        draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen, zbuffer, colortmp)
     x1 = mid[0]
     yi = mid[1]
     z1 = mid[2]
-    draw_line(x0,yi,z0, x1,yi,z1, screen, zbuffer, colortmp)
+    draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen, zbuffer, colortmp)
     while yi < bot[1]:
         x0 += dx0
         z0 += dz0
         x1 += dx1b
         z1 += dz1b
         yi += 1
-        draw_line(x0,yi,z0, x1,yi,z1, screen,zbuffer, colortmp)
+        draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen,zbuffer, colortmp)
 
 
 def add_polygon( polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2 ):
