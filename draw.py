@@ -16,15 +16,13 @@ def scanline_convert(matrix, point, screen, zbuffer):
     p1 = matrix[point+1]
     p2 = matrix[point+2]
 
-    print p0,p1,p2
     colortmp = random.sample(xrange(255),3)
     for i in range(3):
-        p0[i] = math.floor(p0[i])
-        p1[i] = math.floor(p1[i])
-        p2[i] = math.floor(p2[i])
+        p0[i] = floor(p0[i])
+        p1[i] = floor(p1[i])
+        p2[i] = floor(p2[i])
     pts = sorted( (p0,p1,p2), key=lambda pt: pt[1])
     print pts
-    time.sleep(1)
 
     top = pts[0]; mid = pts[1]; bot = pts[2]
     
