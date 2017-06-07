@@ -15,7 +15,8 @@ def scanline_convert(matrix, point, screen, zbuffer):
     p0 = matrix[point]
     p1 = matrix[point+1]
     p2 = matrix[point+2]
-
+#    if env["shading_mode"]=="flat":
+        
     colortmp = random.sample(xrange(255),3)
     for i in range(3):
         p0[i] = floor(p0[i])
@@ -89,6 +90,7 @@ def draw_polygons( matrix, screen, zbuffer, color ):
         normal = calculate_normal(matrix, point)[:]
         #print normal
         if normal[2] > 0:
+#            
             scanline_convert(matrix, point, screen, zbuffer)            
             '''
             draw_line( int(matrix[point][0]),

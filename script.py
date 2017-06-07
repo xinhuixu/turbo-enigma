@@ -25,6 +25,8 @@ def first_pass( commands ):
     frameCheck = varyCheck = nameCheck = False
     name = ''
     num_frames = 1
+    shading_mode = "flat"
+    ambient = (40, 40, 40)
     
     for command in commands:
         
@@ -37,6 +39,11 @@ def first_pass( commands ):
             name = command[1]
             nameCheck = True
 
+        elif command[0] == "shading":
+            shading_mode = command[1]
+        elif command[0] == "ambient":
+            ambient = (command[0],command[1],command[2])
+            
     if varyCheck and not frameCheck:
         print 'Error: Vary command found without setting number of frames!'
         exit()
@@ -112,6 +119,16 @@ def run(filename):
 
     (name, num_frames) = first_pass(commands)
     frames = second_pass(commands, num_frames)
+###lighting shenanigans
+    lights = []
+    for s in symbols:
+        if s[0] == 'light': lights.append(s[1])
+
+    env = {}
+    env["shading_mode"] = shading_mode
+    env["ambient"] = ambient
+    env["lights"] = lights
+
     #print frames
     step = 0.1
 
@@ -150,19 +167,19 @@ def run(filename):
                         args[0], args[1], args[2],
                         args[3], args[4], args[5])
                 matrix_mult( stack[-1], tmp )
-                draw_polygons(tmp, screen, zb, color)
+                draw_polygons(tmp, screen, zb, color, env)
                 tmp = []
             elif c == 'sphere':
                 add_sphere(tmp,
                            args[0], args[1], args[2], args[3], step)
                 matrix_mult( stack[-1], tmp )
-                draw_polygons(tmp, screen, zb, color)
+                draw_polygons(tmp, screen, zb, color, env)
                 tmp = []
             elif c == 'torus':
                 add_torus(tmp,
                           args[0], args[1], args[2], args[3], args[4], step)
                 matrix_mult( stack[-1], tmp )
-                draw_polygons(tmp, screen, zb, color)
+                draw_polygons(tmp, screen, zb, color, env)
                 tmp = []
             elif c == 'move':
                 if command[-1]:
