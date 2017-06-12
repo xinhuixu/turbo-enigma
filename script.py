@@ -20,13 +20,32 @@ from draw import *
 
   jdyrlandweaver
   ==================== """
-def first_pass( commands ):
+def light_pass( symbols ):
 
+    shading_mode = "flat"
+    ambient = (100, 100, 100) #default
+    constants = {}
+    lights = {}
+
+    for symbol in symbols:
+        s = symbols[symbol]
+        
+        if s[0] == "shading":
+            shading_mode = s[1]
+        elif s[0] == "ambient":
+            ambient = (s[1],s[2],s[3])
+        elif s[0] == "constants":            
+            constants[symbol] = s[1]            
+        elif s[0] == "light":
+            lights[symbol] = s[1]
+            
+    return (shading_mode, ambient, constants, lights)
+
+def first_pass( commands ):
+    print commands
     frameCheck = varyCheck = nameCheck = False
     name = ''
     num_frames = 1
-    shading_mode = "flat"
-    ambient = (40, 40, 40)
     
     for command in commands:
         
@@ -39,10 +58,6 @@ def first_pass( commands ):
             name = command[1]
             nameCheck = True
 
-        elif command[0] == "shading":
-            shading_mode = command[1]
-        elif command[0] == "ambient":
-            ambient = (command[0],command[1],command[2])
             
     if varyCheck and not frameCheck:
         print 'Error: Vary command found without setting number of frames!'
@@ -51,8 +66,9 @@ def first_pass( commands ):
     elif frameCheck and not nameCheck:
         print 'Animation code present but basename was not set. Using "frame" as basename.'
         name = 'frame'
-    
+
     return (name, num_frames)
+
 
 """======== second_pass( commands ) ==========
 
@@ -117,17 +133,17 @@ def run(filename):
         print "Parsing failed."
         return
 
+    (shading_mode, ambient, constants, lights) = light_pass(symbols)
     (name, num_frames) = first_pass(commands)
     frames = second_pass(commands, num_frames)
-###lighting shenanigans
-    lights = []
-    for s in symbols:
-        if s[0] == 'light': lights.append(s[1])
+
 
     env = {}
     env["shading_mode"] = shading_mode
     env["ambient"] = ambient
     env["lights"] = lights
+    env["constants"] = constants
+
 
     #print frames
     step = 0.1
@@ -217,7 +233,11 @@ def run(filename):
                 display(screen)
             elif c == 'save':
                 save_extension(screen, args[0])
-        
+            elif c in ["vary","basename","frames"]:
+                pass            
+            elif c in ["shading","ambient","light"]:
+                pass
+
         if num_frames > 1:
             fname = 'anim/%s%03d.png' % (name, f)
             print 'Saving frame: ' + fname

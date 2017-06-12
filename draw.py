@@ -11,20 +11,30 @@ def clear_zbuffer():
     global zbuffer
     zbuffer = [[min_float for x in range(500)] for x in range(500)]
 
-def scanline_convert(matrix, point, screen, zbuffer):
+def scanline_convert(matrix, point, screen, zbuffer, env):
     p0 = matrix[point]
     p1 = matrix[point+1]
     p2 = matrix[point+2]
-#    if env["shading_mode"]=="flat":
+
+    
+    if env["shading_mode"]=="flat":
+        k = env["constants"]
+        ka = (k[0], k[1], k[2])
+        kd = (k[3], k[4], k[5])
+        ks = (k[6], k[7], k[8])
         
-    colortmp = random.sample(xrange(255),3)
+        color = light(p0[0], p0[1], p0[2], ka, kd, ks, env)
+        
+    else: #random colorzzzz
+        color = random.sample(xrange(255),3)
+        
     for i in range(3):
         p0[i] = floor(p0[i])
         p1[i] = floor(p1[i])
         p2[i] = floor(p2[i])
     pts = sorted( (p0,p1,p2), key=lambda pt:(pt[1],pt[0]))
 
-    print pts
+
 
     top = pts[0]; mid = pts[1]; bot = pts[2]
     
@@ -60,29 +70,61 @@ def scanline_convert(matrix, point, screen, zbuffer):
         yi += 1
         x0 += dx0
         z0 += dz0
-        draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen, zbuffer, colortmp)
+        draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen, zbuffer, color)
     x1 = mid[0]
     yi = mid[1]
     z1 = mid[2]
-    draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen, zbuffer, colortmp)
+    draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen, zbuffer, color)
     while yi < bot[1]:
         x0 += dx0
         z0 += dz0
         x1 += dx1b
         z1 += dz1b
         yi += 1
-        draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen,zbuffer, colortmp)
+        draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen,zbuffer, color)
 
 
+        
+def light(x, y, z, ka, kd, ks, env):
+    color = [0,0,0]
+    ia = env["ambient"]
+    for i in range(3):
+        ambient = ka[i] * ia[i]
+        color[i] += ambient
+        for light in env["lights"]:
+            print light
+            vector_l = vect_minus(light[3:],p0)
+            n_surf_norm = normalize(surf_norm)
+            n_vector_l = normalize(vector_l)
+            
+            diffuse = kd[i] * light[i] * \
+                      max(0, dot_prod(n_surf_norm, 
+                                      n_vector_l))
+            
+            n_x_vect = cross_prod(n_surf_norm, n_vector_l)
+            specular_r_vec = normalize(vect_minus(scalar_prod(2,n_x_vect),n_vector_l))
+            view_vec = normalize(vect_minus(p0,[0,0,-1]))
+            
+            specular = ks[i] * light[i] * \
+                       max(0, dot_prod(specular_r_vec,
+                                       view_vec)) ** 15
+            
+            color[i] += diffuse+specular
+            color[i] = int(min(color[i],255))
+    return color
+
+        
 def add_polygon( polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2 ):
     add_point(polygons, x0, y0, z0);
     add_point(polygons, x1, y1, z1);
     add_point(polygons, x2, y2, z2);
 
-def draw_polygons( matrix, screen, zbuffer, color ):
+def draw_polygons( matrix, screen, zbuffer, color, env ):
     if len(matrix) < 2:
         print 'Need at least 3 points to draw'
         return
+
+    print env
 
     point = 0    
     while point < len(matrix) - 2:
@@ -90,31 +132,32 @@ def draw_polygons( matrix, screen, zbuffer, color ):
         normal = calculate_normal(matrix, point)[:]
         #print normal
         if normal[2] > 0:
-#            
-            scanline_convert(matrix, point, screen, zbuffer)            
-            '''
-            draw_line( int(matrix[point][0]),
-                       int(matrix[point][1]),
-                       matrix[point][2],
-                       int(matrix[point+1][0]),
-                       int(matrix[point+1][1]),
-                       matrix[point+1][2],
-                       screen, zbuffer, color)
-            draw_line( int(matrix[point+2][0]),
-                       int(matrix[point+2][1]),
-                       matrix[point+2][2],
-                       int(matrix[point+1][0]),
-                       int(matrix[point+1][1]),
-                       matrix[point+1][2],
-                       screen, zbuffer, color)
-            draw_line( int(matrix[point][0]),
-                       int(matrix[point][1]),
-                       matrix[point][2],
-                       int(matrix[point+2][0]),
-                       int(matrix[point+2][1]),
-                       matrix[point+2][2],
-                       screen, zbuffer, color)    
-            '''
+           if env["shading_mode"]=="wireframe": 
+               draw_line( int(matrix[point][0]),
+                          int(matrix[point][1]),
+                          matrix[point][2],
+                          int(matrix[point+1][0]),
+                          int(matrix[point+1][1]),
+                          matrix[point+1][2],
+                          screen, zbuffer, color)
+               draw_line( int(matrix[point+2][0]),
+                          int(matrix[point+2][1]),
+                          matrix[point+2][2],
+                          int(matrix[point+1][0]),
+                          int(matrix[point+1][1]),
+                          matrix[point+1][2],
+                          screen, zbuffer, color)
+               draw_line( int(matrix[point][0]),
+                          int(matrix[point][1]),
+                          matrix[point][2],
+                          int(matrix[point+2][0]),
+                          int(matrix[point+2][1]),
+                          matrix[point+2][2],
+                          screen, zbuffer, color)    
+
+           else:
+               scanline_convert(matrix, point, screen, zbuffer, env)            
+
         point+= 3
 
 
