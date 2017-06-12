@@ -104,39 +104,42 @@ def normalize(v):
 ####################
 
 def light(p0, p1, p2, ka, kd, ks, env):
-    color = [0,0,0]
-    print env
-    ia = env["ambient"]
+    color = [0, 0, 0]
+#    print env
+ #   print "ka kd ks", ka, kd, ks
 
     for i in range(3):
-        ambient = ka[i] * ia[i]
-        color[i] += ambient
+
         for light in env["lights"]:
             
             location = env["lights"][light]["location"] # light['location'] doesnt workes
-#            light_color = env["lights"][light]["color"]
-            print "location", location
-#            print "light_color", light_color
-
+            light_color = env["lights"][light]["color"]
+  #          print "location", location
+   #         print "light_color", light_color
+            
+            ambient = ka[i] * env["ambient"][i]
+            color[i] += ambient
+            
             vector_l = vect_minus(location ,p0)
 
             surf_norm = cross_prod(vect_minus(p1,p0),vect_minus(p2,p0))
             
             n_surf_norm = normalize(surf_norm)
+
             n_vector_l = normalize(vector_l)
 
 
-            diffuse = kd[i] * location[i] * \
+            diffuse = kd[i] * light_color[i] * \
                       max(0, dot_prod(n_surf_norm, 
                                       n_vector_l))
             
             n_x_vect = cross_prod(n_surf_norm, n_vector_l)
             specular_r_vect = normalize(vect_minus(scalar_prod(2,n_x_vect),n_vector_l))
-            view_vect = normalize(vect_minus(p0,[0,0,-1]))
+            view_vect = normalize(vect_minus(p0,[0,0,1]))
             
-            specular = ks[i] * location[i] * \
+            specular = ks[i] * light_color[i] * \
                        max(0, dot_prod(specular_r_vect,
-                                       view_vect)) ** 15 #the exponent
+                                       view_vect)) ** 20 #the exponent
             
             color[i] += diffuse+specular
             color[i] = int(min(color[i],255))

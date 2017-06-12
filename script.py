@@ -23,7 +23,7 @@ from draw import *
 def light_pass( symbols ):
 
     shading_mode = "flat"
-    ambient = (100, 100, 100) #default
+    ambient = [0, 0, 0] #default
     constants = {}
     lights = {}
 
@@ -146,7 +146,7 @@ def run(filename):
 
 
     #print frames
-    step = 0.05
+    step = 0.01
 
     #print symbols
 
