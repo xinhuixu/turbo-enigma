@@ -1,8 +1,8 @@
 frames 1
 basename mytest
 shading flat
-ambient 200 200 200
-light l1 100 0 100 255 0 255
+ambient 10 10 10
+light l1 100 100 100 255 0 255
 constants white 0.8 0.8 0.8 0.8 0.8 0.8 0.8 0.8 0.8 
 
 push
