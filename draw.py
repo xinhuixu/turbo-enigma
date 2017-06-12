@@ -11,19 +11,21 @@ def clear_zbuffer():
     global zbuffer
     zbuffer = [[min_float for x in range(500)] for x in range(500)]
 
-def scanline_convert(matrix, point, screen, zbuffer, env):
+def scanline_convert(matrix, point, screen, zbuffer, c, env):
     p0 = matrix[point]
     p1 = matrix[point+1]
     p2 = matrix[point+2]
 
     
     if env["shading_mode"]=="flat":
-        k = env["constants"]
-        ka = (k[0], k[1], k[2])
-        kd = (k[3], k[4], k[5])
-        ks = (k[6], k[7], k[8])
-        
-        color = light(p0[0], p0[1], p0[2], ka, kd, ks, env)
+        k = env["constants"]["white"] ######Why is there a name for constants?
+        #'constants': {'white': {'blue': [0.25, 0.5, 0.25], 'green': [0.25, 0.5, 0.25], 'red': [0.25, 0.5, 0.25]}}
+
+        ka = (k['blue'][0], k['green'][0], k['red'][0])
+        kd = (k['blue'][1], k['green'][1], k['red'][1])
+        ks = (k['blue'][2], k['green'][2], k['red'][2])
+        print "ka kd ks", ka, kd, ks
+        color = light(p0, p1, p2, ka, kd, ks, env)
         
     else: #random colorzzzz
         color = random.sample(xrange(255),3)
@@ -84,34 +86,61 @@ def scanline_convert(matrix, point, screen, zbuffer, env):
         draw_line(int(x0), int(yi), int(z0), int(x1), int(yi), int(z1), screen,zbuffer, color)
 
 
-        
-def light(x, y, z, ka, kd, ks, env):
-    color = [0,0,0]
-    ia = env["ambient"]
+###VEEECCCTTOORR####
+def vect_minus(a,b):
+    return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]
+def cross_prod(a,b):
+    return [a[1]*b[2] - a[2]*b[1],
+            a[2]*b[0] - a[0]*b[2],
+            a[0]*b[1] - a[1]*b[0]]
+def dot_prod(a,b):
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+def scalar_prod(k,a):
+    return [k*a[0], k*a[1], k*a[2]]
+def magnitude(v):
+    return math.sqrt(sum(i**2 for i in v))
+def normalize(v):
+    return [i/magnitude(v) for i in v]
+####################
+
+def light(p0, p1, p2, ka, kd, ks, env):
+    colortmp = [0,0,0]
     for i in range(3):
+        ia = env["ambient"]
         ambient = ka[i] * ia[i]
-        color[i] += ambient
+        colortmp[i] += ambient
         for light in env["lights"]:
-            print light
-            vector_l = vect_minus(light[3:],p0)
+            
+            location = env["lights"][light]["location"] # light['location'] doesnt work
+#            light_color = env["lights"][light]["color"]
+            print "location", location
+#            print "light_color", light_color
+
+            vector_l = vect_minus(location ,p0)
+
+            surf_norm = cross_prod(vect_minus(p1,p0),vect_minus(p2,p0))
+            
             n_surf_norm = normalize(surf_norm)
             n_vector_l = normalize(vector_l)
-            
-            diffuse = kd[i] * light[i] * \
+
+
+            diffuse = kd[i] * location[i] * \
                       max(0, dot_prod(n_surf_norm, 
                                       n_vector_l))
             
             n_x_vect = cross_prod(n_surf_norm, n_vector_l)
-            specular_r_vec = normalize(vect_minus(scalar_prod(2,n_x_vect),n_vector_l))
-            view_vec = normalize(vect_minus(p0,[0,0,-1]))
+            specular_r_vect = normalize(vect_minus(scalar_prod(2,n_x_vect),n_vector_l))
+            view_vect = normalize(vect_minus(p0,[0,0,-1]))
             
-            specular = ks[i] * light[i] * \
-                       max(0, dot_prod(specular_r_vec,
-                                       view_vec)) ** 15
+            specular = ks[i] * location[i] * \
+                       max(0, dot_prod(specular_r_vect,
+                                       view_vect)) ** 15 #the exponent
             
-            color[i] += diffuse+specular
-            color[i] = int(min(color[i],255))
-    return color
+            colortmp[i] += diffuse+specular
+            colortmp[i] = int(min(colortmp[i],255))
+
+    print "COLOR: ", colortmp
+    return colortmp
 
         
 def add_polygon( polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2 ):
@@ -124,40 +153,13 @@ def draw_polygons( matrix, screen, zbuffer, color, env ):
         print 'Need at least 3 points to draw'
         return
 
-    print env
-
     point = 0    
     while point < len(matrix) - 2:
 
         normal = calculate_normal(matrix, point)[:]
         #print normal
         if normal[2] > 0:
-           if env["shading_mode"]=="wireframe": 
-               draw_line( int(matrix[point][0]),
-                          int(matrix[point][1]),
-                          matrix[point][2],
-                          int(matrix[point+1][0]),
-                          int(matrix[point+1][1]),
-                          matrix[point+1][2],
-                          screen, zbuffer, color)
-               draw_line( int(matrix[point+2][0]),
-                          int(matrix[point+2][1]),
-                          matrix[point+2][2],
-                          int(matrix[point+1][0]),
-                          int(matrix[point+1][1]),
-                          matrix[point+1][2],
-                          screen, zbuffer, color)
-               draw_line( int(matrix[point][0]),
-                          int(matrix[point][1]),
-                          matrix[point][2],
-                          int(matrix[point+2][0]),
-                          int(matrix[point+2][1]),
-                          matrix[point+2][2],
-                          screen, zbuffer, color)    
-
-           else:
-               scanline_convert(matrix, point, screen, zbuffer, env)            
-
+               scanline_convert(matrix, point, screen, zbuffer, color, env)
         point+= 3
 
 

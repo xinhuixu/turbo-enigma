@@ -146,7 +146,7 @@ def run(filename):
 
 
     #print frames
-    step = 0.1
+    step = 0.05
 
     #print symbols
 
