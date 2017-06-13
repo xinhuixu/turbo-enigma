@@ -118,6 +118,9 @@ def second_pass( commands, num_frames ):
     return frames
 
 def run(filename):
+
+    print "for testing purposes!"
+
     """
     This function runs an mdl script
     """
@@ -146,7 +149,7 @@ def run(filename):
 
 
     #print frames
-    step = 0.01
+    step = 0.05
 
     #print symbols
 
